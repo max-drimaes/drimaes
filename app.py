@@ -1,8 +1,4 @@
 import streamlit as st
-import locale
-
-# 로케일 설정 (금액 포맷팅에 필요)
-locale.setlocale(locale.LC_ALL, '')
 
 # 문서별로 결재 라인 유형 분류
 document_types = {
@@ -33,6 +29,17 @@ document_types = {
     "회원가입완료보고서": ['회원가입완료보고서'],
     "협회가입신청서": ['협회가입신청서']
 }
+
+# 1000 단위로 쉼표 추가 함수
+def format_number_with_commas(number):
+    if number == "":
+        return ""
+    try:
+        # 쉼표가 포함된 문자열을 숫자로 변환 후 다시 쉼표 포함 문자열로 변환
+        number = int(number.replace(",", ""))
+        return f"{number:,}"
+    except ValueError:
+        return number
 
 # 문서 목록 중복 제거 함수
 def remove_duplicates(doc_list):
@@ -118,6 +125,7 @@ def main():
     - 다만, 최상위 결재자인 **아이언맨**과 **백호**의 경우 **수신부서** (보통 GWP 센터)의 합의가 끝난 후 결재를 진행합니다.
     """)
 
+
     # 센터 선택
     selected_center = st.selectbox("센터 선택", sorted(list(team_dict.keys())))
     teams = team_dict.get(selected_center, ['팀 없음'])
@@ -131,14 +139,13 @@ def main():
     # 문서 선택
     selected_document = st.selectbox("문서 선택", get_all_documents())
 
-    # 금액 입력 (쉼표 추가된 금액 입력 처리)
-    amount_input = st.text_input("금액 입력 (원)", '0')
-    try:
-        amount = int(amount_input.replace(",", ""))  # 쉼표를 제거하고 숫자로 변환
-        formatted_amount = locale.format_string("%d", amount, grouping=True)  # 쉼표 추가
-        st.text_input("금액 입력 (쉼표 포함)", formatted_amount)  # 쉼표 추가된 값 표시
-    except ValueError:
-        amount = 0
+    # 금액 입력 (쉼표가 자동으로 추가되는 기능)
+    amount_input = st.text_input("금액 입력 (원)", '0', key="amount_input")
+    formatted_amount = format_number_with_commas(amount_input)
+    amount_input = st.text_input("쉼표가 포함된 금액", value=formatted_amount, key="formatted_amount")
+
+    # 금액을 숫자로 변환
+    amount = int(formatted_amount.replace(",", "")) if formatted_amount.replace(",", "").isdigit() else 0
 
     # 버튼 클릭 시 결재 라인 생성
     if st.button("결재 라인 생성"):
@@ -351,6 +358,8 @@ def generate_approval_line(selected_center, selected_team, selected_role, select
             # 기타 문서 유형 처리
             else:
                 add_approver_if_not_exists(next_approver)
+    # 결재라인 생성기 이름 변경
+    st.title("생성이 완료되었습니다.")
 
     process_approval_line()
 
