@@ -62,12 +62,10 @@ team_dict = {
     '전장 R&D 센터': ['HW설계', '임베디드SW설계', '제어기SW설계']
 }
 
-# 리더십 매칭 정보
+# 리더십 매칭 정보 (Design 센터와 전장 R&D 센터 제외)
 leadership_matching = {
-    'Alliance 센터': '아이언맨',
-    '선행 R&D 센터': '중앙기술연구소장',
-    '전장 R&D 센터': '중앙기술연구소장',
-    'Design 센터': '중앙기술연구소장'
+    'Alliance 센터': '아이언맨'
+    # Design 센터와 전장 R&D 센터는 별도로 처리
 }
 
 # 센터장 이름 매칭
@@ -78,7 +76,7 @@ center_heads = {
     '전장 R&D 센터': '전장 R&D 센터장',
 }
 
-# 역할 목록 (팀원, 팀장만 남김)
+# 역할 목록
 roles = ['팀원', '팀장']
 
 # HR&GA 팀 합의 필요한 문서
@@ -110,17 +108,44 @@ finance_documents = [
     '외화송금신청서'
 ]
 
-# 중앙기술연구소장과 선행 R&D 센터장이 동일인물인지 여부
-def is_same_person(role1, role2):
-    same_person_roles = [('중앙기술연구소장', '선행 R&D 센터장')]
-    return (role1, role2) in same_person_roles or (role2, role1) in same_person_roles
+# 중앙기술연구소 소속 센터들
+cri_centers = ['선행 R&D 센터', '전장 R&D 센터', 'Design 센터']
+
+# 메인 함수
+def main():
+    st.title("DRIMAES 결재 라인 생성기")
+
+    # 센터 선택
+    selected_center = st.selectbox("센터 선택", sorted(list(team_dict.keys())))
+    teams = team_dict.get(selected_center, ['팀 없음'])
+
+    # 팀 선택
+    selected_team = st.selectbox("팀 선택", teams)
+
+    # 역할 선택
+    selected_role = st.selectbox("역할 선택", roles)
+
+    # 문서 선택
+    selected_document = st.selectbox("문서 선택", get_all_documents())
+
+    # 금액 입력 (쉼표가 자동으로 추가되는 기능)
+    amount_input = st.text_input("*금액입력이 필요한 문서의 경우 금액 입력 (원)", '0', key="amount_input")
+    formatted_amount = format_number_with_commas(amount_input)
+    amount_input = st.text_input("1,000단위로 자동 변경", value=formatted_amount, key="formatted_amount")
+
+    # 금액을 숫자로 변환
+    amount = int(formatted_amount.replace(",", "")) if formatted_amount.replace(",", "").isdigit() else 0
+
+    # 버튼 클릭 시 결재 라인 생성
+    if st.button("결재 라인 생성"):
+        approval_line_str = generate_approval_line(
+            selected_center, selected_team, selected_role, selected_document, amount
+        )
+        st.subheader("결재 라인:")
+        st.text(approval_line_str)
 
 # 결재 라인 생성 함수
 def generate_approval_line(selected_center, selected_team, selected_role, selected_document, amount):
-    # 중앙기술연구소 소속 여부 확인
-    cri_centers = ['선행 R&D 센터', '전장 R&D 센터', 'Design 센터']
-    is_cri_member = selected_center in cri_centers
-
     # 결재 라인 초기화
     approval_line = []
     approver_set = set()
@@ -145,10 +170,6 @@ def generate_approval_line(selected_center, selected_team, selected_role, select
     # 센터장 결정
     center_head = center_heads.get(selected_center, f"{selected_center.replace(' 센터', '')} 센터장")
 
-    # 만약 center_head와 '중앙기술연구소장'이 동일인물이라면, center_head를 '중앙기술연구소장'으로 변경
-    if is_same_person(center_head, '중앙기술연구소장'):
-        center_head = '중앙기술연구소장'
-
     # 차상위 결재자 결정
     def get_next_approver():
         if selected_role == '팀원':
@@ -160,10 +181,6 @@ def generate_approval_line(selected_center, selected_team, selected_role, select
             return center_head
         else:
             return '아이언맨'
-
-    # 리더십 매칭 결재자 결정
-    def get_leadership_matching():
-        return leadership_matching.get(selected_center, '아이언맨')
 
     # 합의자 결정 (HR&GA 또는 Finance 팀원)
     def get_agreement_team():
@@ -203,82 +220,31 @@ def generate_approval_line(selected_center, selected_team, selected_role, select
         nonlocal order
 
         next_approver = get_next_approver()
-        leadership = get_leadership_matching()
         agreement_team = get_agreement_team()
         gwp_center_head = 'GWP 센터장'
 
         # 1. 팀장 또는 센터장 추가
-        add_approver_if_not_exists(next_approver)
+        if selected_role == '팀원':
+            add_approver_if_not_exists(next_approver)  # 팀장
+            add_approver_if_not_exists(center_head)    # 센터장
+        elif selected_role == '팀장':
+            add_approver_if_not_exists(center_head)    # 센터장
 
-        # 2. 센터장 추가 (팀장이 아닌 경우)
-        if center_head != next_approver:
-            add_approver_if_not_exists(center_head)
+        # 2. 중앙기술연구소장 추가 (Design 센터와 전장 R&D 센터의 경우)
+        if selected_center in ['Design 센터', '전장 R&D 센터']:
+            add_approver_if_not_exists('중앙기술연구소장')
 
-        # 3. 리더십 추가 (센터장과 다를 경우)
-        if leadership and leadership != center_head:
-            add_approver_if_not_exists(leadership)
-
-        # 4. 합의자 추가
+        # 3. 합의자 추가
         if agreement_team:
             add_agreement_if_not_exists(agreement_team)
         add_agreement_if_not_exists(gwp_center_head)
 
-        # 5. 아이언맨 추가 (조건부: 금액이 1,000,000원 이상일 때)
-        if amount >= 1000000:
-            add_approver_if_not_exists('아이언맨')
+        # 4. 아이언맨 추가
+        add_approver_if_not_exists('아이언맨')
 
-    # 특별 문서 유형 처리 ('협회가입신청서')
-    def process_special_approval_line():
-        nonlocal order
+    process_approval_line()
 
-        gwp_center_head = 'GWP 센터장'
-
-        if not is_cri_member:
-            # 중앙기술연구소 외부
-            if selected_role == '팀원':
-                add_approver_if_not_exists(get_next_approver())  # 팀장
-                add_approver_if_not_exists(center_head)          # 해당 센터장
-                add_agreement_if_not_exists('해그리드')            # 전략실(해그리드)
-                add_agreement_if_not_exists(gwp_center_head)     # GWP 센터장
-                # 조건부로 아이언맨 추가
-                if amount >= 1000000:
-                    add_approver_if_not_exists('아이언맨')        # 아이언맨
-            elif selected_role == '팀장':
-                add_approver_if_not_exists(center_head)          # 센터장
-                add_agreement_if_not_exists('해그리드')            # 전략실(해그리드)
-                add_agreement_if_not_exists(gwp_center_head)     # GWP 센터장
-                # 조건부로 아이언맨 추가
-                if amount >= 1000000:
-                    add_approver_if_not_exists('아이언맨')        # 아이언맨
-        else:
-            # 중앙기술연구소 소속
-            if selected_role == '팀원':
-                add_approver_if_not_exists(get_next_approver())  # 팀장
-                add_approver_if_not_exists(center_head)          # 센터장
-                if leadership != center_head:
-                    add_approver_if_not_exists(leadership)      # 중앙기술연구소장
-                add_agreement_if_not_exists('해그리드')            # 전략실
-                add_agreement_if_not_exists(gwp_center_head)     # GWP 센터장
-                # 조건부로 아이언맨 추가
-                if amount >= 1000000:
-                    add_approver_if_not_exists('아이언맨')        # 아이언맨
-            elif selected_role == '팀장':
-                add_approver_if_not_exists(center_head)          # 센터장
-                if leadership != center_head:
-                    add_approver_if_not_exists(leadership)      # 중앙기술연구소장
-                add_agreement_if_not_exists('해그리드')            # 전략실
-                add_agreement_if_not_exists(gwp_center_head)     # GWP 센터장
-                # 조건부로 아이언맨 추가
-                if amount >= 1000000:
-                    add_approver_if_not_exists('아이언맨')        # 아이언맨
-
-    # 결재 라인 생성 실행
-    if selected_document == '협회가입신청서':
-        process_special_approval_line()
-    else:
-        process_approval_line()
-
-    # 결재 라인 정렬
+    # 결재 라인 정렬 및 중복 제거
     approval_line = sorted(approval_line, key=lambda x: x[0])
 
     # 결과 문자열 생성
@@ -287,50 +253,6 @@ def generate_approval_line(selected_center, selected_team, selected_role, select
         approval_line_str += f"{i}. {action}: {name}\n"
 
     return approval_line_str.strip()
-
-# 메인 함수
-def main():
-    st.title("DRIMAES 결재 라인 생성기")
-
-    st.markdown("""
-    ### 결재 라인에 대한 설명
-    - 결재 라인은 문서의 결재 과정을 나타내는 흐름도이며, 각 문서의 결재 과정에 따라 결재자와 합의자가 결정됩니다.
-    - 결재는 발신부서와 수신부서의 개념을 뜻하지만, 비즈박스 특성상 이를 구현할 수 없으므로 결재자와 합의자로 구분합니다.
-    - 기본적인 흐름은 **발신부서 결재 완료** 후, **수신부서 합의 완료**의 흐름입니다.
-    - 다만, **아이언맨**은 금액이 1,000,000원 이상인 경우에만 결재 라인에 포함됩니다.
-    """)
-
-    # 센터 선택
-    selected_center = st.selectbox("센터 선택", sorted(list(team_dict.keys())))
-    teams = team_dict.get(selected_center, ['팀 없음'])
-
-    # 팀 선택
-    selected_team = st.selectbox("팀 선택", teams)
-
-    # 역할 선택
-    selected_role = st.selectbox("역할 선택", roles)
-
-    # 문서 선택
-    selected_document = st.selectbox("문서 선택", get_all_documents())
-
-    # 금액 입력 (쉼표가 자동으로 추가되는 기능)
-    amount_input = st.text_input("*금액입력이 필요한 문서의 경우 금액 입력 (원)", '0', key="amount_input")
-    formatted_amount = format_number_with_commas(amount_input)
-    amount_input = st.text_input("1,000단위로 자동 변경", value=formatted_amount, key="formatted_amount")
-
-    # 금액을 숫자로 변환
-    try:
-        amount = int(formatted_amount.replace(",", ""))
-    except ValueError:
-        amount = 0
-
-    # 버튼 클릭 시 결재 라인 생성
-    if st.button("결재 라인 생성"):
-        approval_line_str = generate_approval_line(
-            selected_center, selected_team, selected_role, selected_document, amount
-        )
-        st.subheader("결재 라인:")
-        st.text(approval_line_str)
 
 if __name__ == "__main__":
     main()
