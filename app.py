@@ -76,7 +76,7 @@ center_heads = {
     '전장 R&D 센터': '전장 R&D 센터장',
 }
 
-# 역할 목록
+# 역할 목록 (팀원, 팀장만 남김)
 roles = ['팀원', '팀장']
 
 # HR&GA 팀 합의 필요한 문서
@@ -108,12 +108,22 @@ finance_documents = [
     '외화송금신청서'
 ]
 
-# 중앙기술연구소 소속 센터들
-cri_centers = ['선행 R&D 센터', '전장 R&D 센터', 'Design 센터']
+# 중앙기술연구소장과 선행 R&D 센터장이 동일인물인지 여부
+def is_same_person(role1, role2):
+    same_person_roles = [('중앙기술연구소장', '선행 R&D 센터장')]
+    return (role1, role2) in same_person_roles or (role2, role1) in same_person_roles
 
 # 메인 함수
 def main():
     st.title("DRIMAES 결재 라인 생성기")
+
+    st.markdown("""
+    ### 결재 라인에 대한 설명
+    - 결재 라인은 문서의 결재 과정을 나타내는 흐름도이며, 각 문서의 결재 과정에 따라 결재자와 합의자가 결정됩니다.
+    - 결재는 발신부서와 수신부서의 개념을 뜻하지만, 비즈박스 특성상 이를 구현할 수 없으므로 결재자와 합의자로 구분합니다.
+    - 기본적인 흐름은 **발신부서 결재 완료** 후, **수신부서 합의 완료**의 흐름입니다.
+    - 다만, 최상위 결재자인 **아이언맨**과 **백호**의 경우 **수신부서** (보통 GWP 센터)의 합의가 끝난 후 결재를 진행합니다.
+    """)
 
     # 센터 선택
     selected_center = st.selectbox("센터 선택", sorted(list(team_dict.keys())))
@@ -146,6 +156,10 @@ def main():
 
 # 결재 라인 생성 함수
 def generate_approval_line(selected_center, selected_team, selected_role, selected_document, amount):
+    # 중앙기술연구소 소속 여부 확인
+    cri_centers = ['선행 R&D 센터', '전장 R&D 센터', 'Design 센터']
+    is_cri_member = selected_center in cri_centers
+
     # 결재 라인 초기화
     approval_line = []
     approver_set = set()
@@ -169,6 +183,10 @@ def generate_approval_line(selected_center, selected_team, selected_role, select
 
     # 센터장 결정
     center_head = center_heads.get(selected_center, f"{selected_center.replace(' 센터', '')} 센터장")
+
+    # 만약 center_head와 '중앙기술연구소장'이 동일인물인지 여부
+    if is_same_person(center_head, '중앙기술연구소장'):
+        center_head = '중앙기술연구소장'
 
     # 차상위 결재자 결정
     def get_next_approver():
@@ -223,24 +241,122 @@ def generate_approval_line(selected_center, selected_team, selected_role, select
         agreement_team = get_agreement_team()
         gwp_center_head = 'GWP 센터장'
 
-        # 1. 팀장 또는 센터장 추가
-        if selected_role == '팀원':
-            add_approver_if_not_exists(next_approver)  # 팀장
-            add_approver_if_not_exists(center_head)    # 센터장
-        elif selected_role == '팀장':
-            add_approver_if_not_exists(center_head)    # 센터장
+        # '협회가입신청서'에 대한 특수 로직 적용
+        if selected_document == '협회가입신청서':
+            # 제공된 조건에 따라 결재 라인 생성
+            if not is_cri_member:
+                # 중앙기술연구소 외부
+                if selected_role == '팀원':
+                    add_approver_if_not_exists(next_approver)  # 팀장
+                    add_approver_if_not_exists(center_head)    # 해당 센터장
+                    add_agreement_if_not_exists('해그리드')     # 전략실(해그리드)
+                    add_agreement_if_not_exists(gwp_center_head)
+                    add_approver_if_not_exists('중앙기술연구소장')  # 중앙기술연구소장 추가
+                    add_approver_if_not_exists('아이언맨')
+                elif selected_role == '팀장':
+                    add_approver_if_not_exists(center_head)
+                    add_agreement_if_not_exists('해그리드')
+                    add_agreement_if_not_exists(gwp_center_head)
+                    add_approver_if_not_exists('중앙기술연구소장')  # 중앙기술연구소장 추가
+                    add_approver_if_not_exists('아이언맨')
+            else:
+                # 중앙기술연구소 소속
+                if selected_role == '팀원':
+                    add_approver_if_not_exists(next_approver)    # 팀장
+                    add_approver_if_not_exists(center_head)      # 센터장
+                    add_approver_if_not_exists('중앙기술연구소장')  # 중앙기술연구소장 추가
+                    add_agreement_if_not_exists('해그리드')       # 전략실(해그리드)
+                    add_agreement_if_not_exists(gwp_center_head)
+                    add_approver_if_not_exists('아이언맨')
+                elif selected_role == '팀장':
+                    add_approver_if_not_exists(center_head)
+                    add_approver_if_not_exists('중앙기술연구소장')  # 중앙기술연구소장 추가
+                    add_agreement_if_not_exists('해그리드')       # 전략실(해그리드)
+                    add_agreement_if_not_exists(gwp_center_head)
+                    add_approver_if_not_exists('아이언맨')
 
-        # 2. 중앙기술연구소장 추가 (Design 센터와 전장 R&D 센터의 경우)
-        if selected_center in ['Design 센터', '전장 R&D 센터']:
-            add_approver_if_not_exists('중앙기술연구소장')
+        else:
+            # Design 센터와 전장 R&D 센터의 경우, 센터장 뒤에 중앙기술연구소장 추가
+            if selected_center in ['Design 센터', '전장 R&D 센터']:
+                add_approver_if_not_exists(center_head)
+                add_approver_if_not_exists('중앙기술연구소장')  # 센터장 뒤에 중앙기술연구소장 추가
+            else:
+                # 다른 센터의 경우 센터장 추가
+                add_approver_if_not_exists(center_head)
+                # 리더십 매칭 추가
+                leadership = leadership_matching.get(selected_center, None)
+                if leadership:
+                    add_approver_if_not_exists(leadership)
 
-        # 3. 합의자 추가
-        if agreement_team:
-            add_agreement_if_not_exists(agreement_team)
-        add_agreement_if_not_exists(gwp_center_head)
+            # 각 문서 유형에 따른 결재 라인 생성
+            if document_type == 'A유형':
+                add_approver_if_not_exists(next_approver)
 
-        # 4. 아이언맨 추가
-        add_approver_if_not_exists('아이언맨')
+            elif document_type == 'B유형':
+                add_approver_if_not_exists(next_approver)
+                if agreement_team:
+                    add_agreement_if_not_exists(agreement_team)
+                add_agreement_if_not_exists(gwp_center_head)
+
+            elif document_type == 'C유형':
+                if selected_role == '팀원':
+                    add_approver_if_not_exists(next_approver)
+                    add_approver_if_not_exists(center_head)
+                elif selected_role == '팀장':
+                    add_approver_if_not_exists(center_head)
+                if agreement_team:
+                    add_agreement_if_not_exists(agreement_team)
+                add_agreement_if_not_exists(gwp_center_head)
+
+            elif document_type == 'D유형':
+                if selected_role == '팀원':
+                    add_approver_if_not_exists(next_approver)
+                elif selected_role == '팀장':
+                    add_approver_if_not_exists(center_head)
+                if agreement_team:
+                    add_agreement_if_not_exists(agreement_team)
+                add_agreement_if_not_exists(gwp_center_head)
+
+            elif document_type == 'E유형':
+                if selected_role == '팀원':
+                    add_approver_if_not_exists(next_approver)
+                    add_approver_if_not_exists(center_head)
+                elif selected_role == '팀장':
+                    add_approver_if_not_exists(center_head)
+                if agreement_team:
+                    add_agreement_if_not_exists(agreement_team)
+
+            elif document_type in ['F유형', 'H유형', '공문서']:
+                if selected_role == '팀원':
+                    add_approver_if_not_exists(next_approver)
+                    add_approver_if_not_exists(center_head)
+                elif selected_role == '팀장':
+                    add_approver_if_not_exists(center_head)
+                if agreement_team:
+                    add_agreement_if_not_exists(agreement_team)
+                add_agreement_if_not_exists(gwp_center_head)
+                add_approver_if_not_exists('아이언맨')
+
+            elif document_type == 'G유형':
+                if selected_role == '팀원':
+                    add_approver_if_not_exists(next_approver)
+                    add_approver_if_not_exists(center_head)
+                elif selected_role == '팀장':
+                    add_approver_if_not_exists(center_head)
+                if agreement_team:
+                    add_agreement_if_not_exists(agreement_team)
+                add_agreement_if_not_exists(gwp_center_head)
+                add_approver_if_not_exists('아이언맨')
+
+            elif document_type == '회원가입완료보고서':
+                add_approver_if_not_exists(next_approver)
+
+            else:
+                add_approver_if_not_exists(next_approver)
+
+            # 마지막으로 아이언맨 추가 (이미 추가된 경우 제외)
+            if '아이언맨' not in approver_set:
+                add_approver_if_not_exists('아이언맨')
 
     process_approval_line()
 
