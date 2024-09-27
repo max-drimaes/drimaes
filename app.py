@@ -344,7 +344,7 @@ def generate_approval_line(selected_center, selected_team, selected_role, select
             else:
                 add_approver_if_not_exists(next_approver)
     # 결재라인 생성기 이름 변경
-    st.title("DRIMAES 결재라인 생성기")
+    st.title("생성이 완료되었습니다.")
 
     process_approval_line()
 
