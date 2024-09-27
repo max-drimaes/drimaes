@@ -248,7 +248,7 @@ def generate_approval_line(selected_center, selected_team, selected_role, select
                 # 중앙기술연구소 외부
                 if selected_role == '팀원':
                     add_approver_if_not_exists(next_approver)  # 팀장
-                    add_approver_if_not_exists(center_head)    # 해당 센터장
+                    add_approver_if_not_exists(center_head)  # 해당 센터장
                     add_agreement_if_not_exists('해그리드')     # 전략실(해그리드)
                     add_agreement_if_not_exists(gwp_center_head)
                     add_approver_if_not_exists('중앙기술연구소장')  # 중앙기술연구소장 추가
@@ -262,19 +262,18 @@ def generate_approval_line(selected_center, selected_team, selected_role, select
             else:
                 # 중앙기술연구소 소속
                 if selected_role == '팀원':
-                    add_approver_if_not_exists(next_approver)    # 팀장
-                    add_approver_if_not_exists(center_head)      # 센터장
+                    add_approver_if_not_exists(next_approver)  # 팀장
+                    add_approver_if_not_exists(center_head)
                     add_approver_if_not_exists('중앙기술연구소장')  # 중앙기술연구소장 추가
-                    add_agreement_if_not_exists('해그리드')       # 전략실(해그리드)
+                    add_agreement_if_not_exists('해그리드')
                     add_agreement_if_not_exists(gwp_center_head)
                     add_approver_if_not_exists('아이언맨')
                 elif selected_role == '팀장':
                     add_approver_if_not_exists(center_head)
                     add_approver_if_not_exists('중앙기술연구소장')  # 중앙기술연구소장 추가
-                    add_agreement_if_not_exists('해그리드')       # 전략실(해그리드)
+                    add_agreement_if_not_exists('해그리드')
                     add_agreement_if_not_exists(gwp_center_head)
                     add_approver_if_not_exists('아이언맨')
-
         else:
             # Design 센터와 전장 R&D 센터의 경우, 센터장 뒤에 중앙기술연구소장 추가
             if selected_center in ['Design 센터', '전장 R&D 센터']:
@@ -354,9 +353,20 @@ def generate_approval_line(selected_center, selected_team, selected_role, select
             else:
                 add_approver_if_not_exists(next_approver)
 
-            # 마지막으로 아이언맨 추가 (이미 추가된 경우 제외)
-            if '아이언맨' not in approver_set:
-                add_approver_if_not_exists('아이언맨')
+        process_approval_line()
+
+        # Finance 팀 합의 필요 여부에 따른 추가
+        if selected_center in ['Design 센터', '전장 R&D 센터']:
+            # 이미 중앙기술연구소장이 추가되었으므로 추가할 필요 없음
+            pass
+        else:
+            if document_type in ['F유형', 'H유형', '공문서', 'G유형']:
+                if is_cri_member:
+                    add_approver_if_not_exists('중앙기술연구소장')  # 중앙기술연구소장 추가
+
+        # 마지막으로 아이언맨 추가 (이미 추가된 경우 제외)
+        if '아이언맨' not in approver_set:
+            add_approver_if_not_exists('아이언맨')
 
     process_approval_line()
 
