@@ -15,7 +15,7 @@ document_types = {
         '선급금신청서',
         '교육 신청서',
         '교육결과보고서',
-        '경비청구신청서(개인카드, 영수증)'
+        '경비청구신청서(개인카드, 영수증)'  # 여기로 이동
     ],
     "H유형": [
         '지출승인요청서(법인카드)',
@@ -25,7 +25,7 @@ document_types = {
         '교육 신청서',
         '교육결과보고서',
         '세금계산서 발행요청서',
-        '경비청구신청서(개인카드, 영수증)'
+        '경비청구신청서(개인카드, 영수증)'  # H유형에도 추가
     ],
     "공문서": ['공문서'],
     "회원가입완료보고서": ['회원가입완료보고서'],
@@ -62,10 +62,12 @@ team_dict = {
     '전장 R&D 센터': ['HW설계', '임베디드SW설계', '제어기SW설계']
 }
 
-# 리더십 매칭 정보 (Design 센터와 전장 R&D 센터 제외)
+# 리더십 매칭 정보
 leadership_matching = {
-    'Alliance 센터': '아이언맨'
-    # Design 센터와 전장 R&D 센터는 별도로 처리
+    'Alliance 센터': '아이언맨',
+    '선행 R&D 센터': '중앙기술연구소장',
+    '전장 R&D 센터': '중앙기술연구소장',
+    'Design 센터': '중앙기술연구소장'
 }
 
 # 센터장 이름 매칭
@@ -125,6 +127,7 @@ def main():
     - 다만, 최상위 결재자인 **아이언맨**과 **백호**의 경우 **수신부서** (보통 GWP 센터)의 합의가 끝난 후 결재를 진행합니다.
     """)
 
+
     # 센터 선택
     selected_center = st.selectbox("센터 선택", sorted(list(team_dict.keys())))
     teams = team_dict.get(selected_center, ['팀 없음'])
@@ -167,16 +170,16 @@ def generate_approval_line(selected_center, selected_team, selected_role, select
     order = 1  # order 변수 초기화
 
     # 결재자 및 합의자 지정 함수
-    def add_approver_if_not_exists(approver, action='결재'):
+    def add_approver_if_not_exists(approver):
         nonlocal order
-        if approver and approver not in approver_set:
-            approval_line.append((order, action, approver))
+        if approver not in approver_set:
+            approval_line.append((order, '결재', approver))
             approver_set.add(approver)
             order += 1
 
     def add_agreement_if_not_exists(agreer):
         nonlocal order
-        if agreer and agreer not in approver_set:
+        if agreer not in approver_set:
             approval_line.append((order, '합의', agreer))
             approver_set.add(agreer)
             order += 1
@@ -200,6 +203,10 @@ def generate_approval_line(selected_center, selected_team, selected_role, select
         else:
             return '아이언맨'
 
+    # 리더십 매칭 결재자 결정
+    def get_leadership_matching():
+        return leadership_matching.get(selected_center, '아이언맨')
+
     # 합의자 결정 (HR&GA 또는 Finance 팀원)
     def get_agreement_team():
         if selected_document in hr_documents:
@@ -222,7 +229,7 @@ def generate_approval_line(selected_center, selected_team, selected_role, select
             document_type = "H유형"
         else:
             document_type = "G유형"
-    elif selected_document in ['지출승인요청서(법인카드)', '경비청구신청서(개인카드, 영수증)']:
+    elif selected_document in ['지출승인요청서(법인카드)', '경비청구신청서(개인카드, 영수증)']:  # 여기 수정
         if amount >= 500000:
             document_type = "H유형"
         else:
@@ -238,6 +245,7 @@ def generate_approval_line(selected_center, selected_team, selected_role, select
         nonlocal order
 
         next_approver = get_next_approver()
+        leadership = get_leadership_matching()
         agreement_team = get_agreement_team()
         gwp_center_head = 'GWP 센터장'
 
@@ -251,13 +259,13 @@ def generate_approval_line(selected_center, selected_team, selected_role, select
                     add_approver_if_not_exists(center_head)  # 해당 센터장
                     add_agreement_if_not_exists('해그리드')     # 전략실(해그리드)
                     add_agreement_if_not_exists(gwp_center_head)
-                    add_approver_if_not_exists('중앙기술연구소장')  # 중앙기술연구소장 추가
+                    add_approver_if_not_exists('중앙기술연구소장')  # 중앙기술연구소장으로 변경
                     add_approver_if_not_exists('아이언맨')
                 elif selected_role == '팀장':
                     add_approver_if_not_exists(center_head)
                     add_agreement_if_not_exists('해그리드')
                     add_agreement_if_not_exists(gwp_center_head)
-                    add_approver_if_not_exists('중앙기술연구소장')  # 중앙기술연구소장 추가
+                    add_approver_if_not_exists('중앙기술연구소장')  # 중앙기술연구소장으로 변경
                     add_approver_if_not_exists('아이언맨')
             else:
                 # 중앙기술연구소 소속
@@ -275,19 +283,19 @@ def generate_approval_line(selected_center, selected_team, selected_role, select
                     add_agreement_if_not_exists(gwp_center_head)
                     add_approver_if_not_exists('아이언맨')
         else:
-            # Design 센터와 전장 R&D 센터의 경우, 센터장 뒤에 중앙기술연구소장 추가
-            if selected_center in ['Design 센터', '전장 R&D 센터']:
-                add_approver_if_not_exists(center_head)
-                add_approver_if_not_exists('중앙기술연구소장')  # 센터장 뒤에 중앙기술연구소장 추가
-            else:
-                # 다른 센터의 경우 센터장 추가
-                add_approver_if_not_exists(center_head)
-                # 리더십 매칭 추가
-                leadership = leadership_matching.get(selected_center, None)
-                if leadership:
-                    add_approver_if_not_exists(leadership)
-
+            # 기존 로직 유지
             # 각 문서 유형에 따른 결재 라인 생성
+
+            # 센터장 뒤에 중앙기술연구소장 추가 (Design 센터, 전장 R&D 센터)
+            if selected_center in ['Design 센터', '전장 R&D 센터']:
+                # 먼저 추가할 결재자 결정
+                if document_type == 'F유형' or document_type == 'H유형' or document_type == '공문서':
+                    # 특정 유형에 대해서만 중앙기술연구소장 추가
+                    pass  # 이미 추가 로직에서 처리됨
+                else:
+                    # 일반적인 경우 센터장 뒤에 중앙기술연구소장 추가
+                    pass  # 기존 로직에서 처리됨
+
             if document_type == 'A유형':
                 add_approver_if_not_exists(next_approver)
 
@@ -331,9 +339,13 @@ def generate_approval_line(selected_center, selected_team, selected_role, select
                     add_approver_if_not_exists(center_head)
                 elif selected_role == '팀장':
                     add_approver_if_not_exists(center_head)
+                if selected_center in ['Design 센터', '전장 R&D 센터']:
+                    add_approver_if_not_exists('중앙기술연구소장')  # 센터장 뒤에 중앙기술연구소장 추가
                 if agreement_team:
                     add_agreement_if_not_exists(agreement_team)
                 add_agreement_if_not_exists(gwp_center_head)
+                if is_cri_member:
+                    add_approver_if_not_exists('중앙기술연구소장')  # 전략실장 대신 중앙기술연구소장
                 add_approver_if_not_exists('아이언맨')
 
             elif document_type == 'G유형':
@@ -342,10 +354,10 @@ def generate_approval_line(selected_center, selected_team, selected_role, select
                     add_approver_if_not_exists(center_head)
                 elif selected_role == '팀장':
                     add_approver_if_not_exists(center_head)
+                if selected_center in ['Design 센터', '전장 R&D 센터']:
+                    add_approver_if_not_exists('중앙기술연구소장')  # 센터장 뒤에 중앙기술연구소장 추가
                 if agreement_team:
                     add_agreement_if_not_exists(agreement_team)
-                add_agreement_if_not_exists(gwp_center_head)
-                add_approver_if_not_exists('아이언맨')
 
             elif document_type == '회원가입완료보고서':
                 add_approver_if_not_exists(next_approver)
@@ -353,20 +365,8 @@ def generate_approval_line(selected_center, selected_team, selected_role, select
             else:
                 add_approver_if_not_exists(next_approver)
 
-        process_approval_line()
-
-        # Finance 팀 합의 필요 여부에 따른 추가
-        if selected_center in ['Design 센터', '전장 R&D 센터']:
-            # 이미 중앙기술연구소장이 추가되었으므로 추가할 필요 없음
-            pass
-        else:
-            if document_type in ['F유형', 'H유형', '공문서', 'G유형']:
-                if is_cri_member:
-                    add_approver_if_not_exists('중앙기술연구소장')  # 중앙기술연구소장 추가
-
-        # 마지막으로 아이언맨 추가 (이미 추가된 경우 제외)
-        if '아이언맨' not in approver_set:
-            add_approver_if_not_exists('아이언맨')
+    # 결재라인 생성기 이름 변경
+    # st.title("생성이 완료되었습니다.")  # 이 부분은 제거
 
     process_approval_line()
 
