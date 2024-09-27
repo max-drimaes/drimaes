@@ -24,7 +24,8 @@ document_types = {
         '선급금신청서',
         '교육 신청서',
         '교육결과보고서',
-        '세금계산서 발행요청서'
+        '세금계산서 발행요청서',
+        '경비청구신청서(개인카드, 영수증)'  # H유형에도 추가
     ],
     "공문서": ['공문서'],
     "회원가입완료보고서": ['회원가입완료보고서'],
@@ -101,7 +102,7 @@ finance_documents = [
     '입금품의',
     '세금계산서 발행요청서',
     '거래처등록신청서',
-    '경비청구신청서(개인카드, 영수증)',  # 여전히 Finance 문서에 포함
+    '경비청구신청서(개인카드, 영수증)',
     '지출승인요청서(법인카드)',
     '지급품의(정기/수시/기타)_세금계산서',
     '선급금신청서',
@@ -228,7 +229,7 @@ def generate_approval_line(selected_center, selected_team, selected_role, select
             document_type = "H유형"
         else:
             document_type = "G유형"
-    elif selected_document == '지출승인요청서(법인카드)':
+    elif selected_document in ['지출승인요청서(법인카드)', '경비청구신청서(개인카드, 영수증)']:  # 여기 수정
         if amount >= 500000:
             document_type = "H유형"
         else:
