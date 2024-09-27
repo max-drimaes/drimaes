@@ -2,7 +2,7 @@ import streamlit as st
 
 # 문서별로 결재 라인 유형 분류
 document_types = {
-    "A유형": ['경비청구신청서(개인카드, 영수증)'],
+    "A유형": [],
     "B유형": ['휴가신청서', '국내출장 신청서'],
     "C유형": ['국내출장 결과보고 및 정산신청서', '휴일대체근무신청서', '경조사비용 신청서'],
     "D유형": ['시간외근로 사전신청서', '시간외근로 결과보고서', '근태취소신청서'],
@@ -14,7 +14,8 @@ document_types = {
         '지급품의(정기/수시/기타)_세금계산서',
         '선급금신청서',
         '교육 신청서',
-        '교육결과보고서'
+        '교육결과보고서',
+        '경비청구신청서(개인카드, 영수증)'  # 여기로 이동
     ],
     "H유형": [
         '지출승인요청서(법인카드)',
@@ -100,7 +101,7 @@ finance_documents = [
     '입금품의',
     '세금계산서 발행요청서',
     '거래처등록신청서',
-    '경비청구신청서(개인카드, 영수증)',
+    '경비청구신청서(개인카드, 영수증)',  # 여전히 Finance 문서에 포함
     '지출승인요청서(법인카드)',
     '지급품의(정기/수시/기타)_세금계산서',
     '선급금신청서',
@@ -285,7 +286,7 @@ def generate_approval_line(selected_center, selected_team, selected_role, select
         else:
             # 기존 로직 유지
             # 각 문서 유형에 따른 결재 라인 생성
-            # A유형 처리
+            # A유형 처리 (경비청구신청서가 G유형으로 이동했으므로 A유형은 비어있음)
             if document_type == 'A유형':
                 add_approver_if_not_exists(next_approver)
 
@@ -341,7 +342,7 @@ def generate_approval_line(selected_center, selected_team, selected_role, select
                     add_approver_if_not_exists('전략실장')
                 add_approver_if_not_exists('아이언맨')
 
-            # G유형 처리
+            # G유형 처리 (경비청구신청서 포함)
             elif document_type == 'G유형':
                 if selected_role == '팀원':
                     add_approver_if_not_exists(next_approver)
