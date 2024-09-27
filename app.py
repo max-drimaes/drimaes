@@ -142,7 +142,7 @@ def main():
     # 금액 입력 (쉼표가 자동으로 추가되는 기능)
     amount_input = st.text_input("금액 입력 (원)", '0', key="amount_input")
     formatted_amount = format_number_with_commas(amount_input)
-    amount_input = st.text_input("쉼표가 포함된 금액", value=formatted_amount, key="formatted_amount")
+    amount_input = st.text_input("1,000단위로 자동 변경", value=formatted_amount, key="formatted_amount")
 
     # 금액을 숫자로 변환
     amount = int(formatted_amount.replace(",", "")) if formatted_amount.replace(",", "").isdigit() else 0
