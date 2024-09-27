@@ -142,7 +142,7 @@ def main():
     selected_document = st.selectbox("문서 선택", get_all_documents())
 
     # 금액 입력 (쉼표가 자동으로 추가되는 기능)
-    amount_input = st.text_input("금액 입력 (원)", '0', key="amount_input")
+    amount_input = st.text_input("*금액입력이 필요한 문서의 경우 금액 입력 (원)", '0', key="amount_input")
     formatted_amount = format_number_with_commas(amount_input)
     amount_input = st.text_input("1,000단위로 자동 변경", value=formatted_amount, key="formatted_amount")
 
