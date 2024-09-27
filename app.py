@@ -223,7 +223,7 @@ def generate_approval_line(selected_center, selected_team, selected_role, select
             add_agreement_if_not_exists(agreement_team)
         add_agreement_if_not_exists(gwp_center_head)
 
-        # 5. 아이언맨 추가 (조건부)
+        # 5. 아이언맨 추가 (조건부: 금액이 1,000,000원 이상일 때)
         if amount >= 1000000:
             add_approver_if_not_exists('아이언맨')
 
@@ -237,15 +237,17 @@ def generate_approval_line(selected_center, selected_team, selected_role, select
             # 중앙기술연구소 외부
             if selected_role == '팀원':
                 add_approver_if_not_exists(get_next_approver())  # 팀장
-                add_approver_if_not_exists(center_head)          # 센터장
+                add_approver_if_not_exists(center_head)          # 해당 센터장
                 add_agreement_if_not_exists('해그리드')            # 전략실(해그리드)
                 add_agreement_if_not_exists(gwp_center_head)     # GWP 센터장
+                # 조건부로 아이언맨 추가
                 if amount >= 1000000:
                     add_approver_if_not_exists('아이언맨')        # 아이언맨
             elif selected_role == '팀장':
                 add_approver_if_not_exists(center_head)          # 센터장
                 add_agreement_if_not_exists('해그리드')            # 전략실(해그리드)
                 add_agreement_if_not_exists(gwp_center_head)     # GWP 센터장
+                # 조건부로 아이언맨 추가
                 if amount >= 1000000:
                     add_approver_if_not_exists('아이언맨')        # 아이언맨
         else:
@@ -257,6 +259,7 @@ def generate_approval_line(selected_center, selected_team, selected_role, select
                     add_approver_if_not_exists(leadership)      # 중앙기술연구소장
                 add_agreement_if_not_exists('해그리드')            # 전략실
                 add_agreement_if_not_exists(gwp_center_head)     # GWP 센터장
+                # 조건부로 아이언맨 추가
                 if amount >= 1000000:
                     add_approver_if_not_exists('아이언맨')        # 아이언맨
             elif selected_role == '팀장':
@@ -265,6 +268,7 @@ def generate_approval_line(selected_center, selected_team, selected_role, select
                     add_approver_if_not_exists(leadership)      # 중앙기술연구소장
                 add_agreement_if_not_exists('해그리드')            # 전략실
                 add_agreement_if_not_exists(gwp_center_head)     # GWP 센터장
+                # 조건부로 아이언맨 추가
                 if amount >= 1000000:
                     add_approver_if_not_exists('아이언맨')        # 아이언맨
 
@@ -274,7 +278,7 @@ def generate_approval_line(selected_center, selected_team, selected_role, select
     else:
         process_approval_line()
 
-    # 결재 라인 정렬 및 중복 제거
+    # 결재 라인 정렬
     approval_line = sorted(approval_line, key=lambda x: x[0])
 
     # 결과 문자열 생성
