@@ -219,8 +219,10 @@ def generate_approval_line(selected_center, selected_team, selected_role, select
         if selected_document != '회원가입완료보고서':
             add_agreement_if_not_exists(gwp_center_head)
 
-        # 5. 아이언맨 추가
-        add_approver_if_not_exists('아이언맨')
+        # 5. 아이언맨 추가 (조건부)
+        # 예: 금액이 1,000,000 원 이상인 경우에만 아이언맨 추가
+        if amount >= 1000000:
+            add_approver_if_not_exists('아이언맨')
 
     # 특별 문서 유형 처리 ('협회가입신청서')
     if selected_document == '협회가입신청서':
@@ -234,12 +236,16 @@ def generate_approval_line(selected_center, selected_team, selected_role, select
                     add_approver_if_not_exists(center_head)          # 센터장
                     add_agreement_if_not_exists('해그리드')            # 전략실
                     add_agreement_if_not_exists(gwp_center_head)     # GWP 센터장
-                    add_approver_if_not_exists('아이언맨')            # 아이언맨
+                    # 조건부로 아이언맨 추가
+                    if amount >= 1000000:
+                        add_approver_if_not_exists('아이언맨')        # 아이언맨
                 elif selected_role == '팀장':
                     add_approver_if_not_exists(center_head)          # 센터장
                     add_agreement_if_not_exists('해그리드')            # 전략실
                     add_agreement_if_not_exists(gwp_center_head)     # GWP 센터장
-                    add_approver_if_not_exists('아이언맨')            # 아이언맨
+                    # 조건부로 아이언맨 추가
+                    if amount >= 1000000:
+                        add_approver_if_not_exists('아이언맨')        # 아이언맨
             else:
                 # 중앙기술연구소 소속
                 if selected_role == '팀원':
@@ -249,14 +255,18 @@ def generate_approval_line(selected_center, selected_team, selected_role, select
                         add_approver_if_not_exists(leadership)      # 중앙기술연구소장
                     add_agreement_if_not_exists('해그리드')            # 전략실
                     add_agreement_if_not_exists(gwp_center_head)     # GWP 센터장
-                    add_approver_if_not_exists('아이언맨')            # 아이언맨
+                    # 조건부로 아이언맨 추가
+                    if amount >= 1000000:
+                        add_approver_if_not_exists('아이언맨')        # 아이언맨
                 elif selected_role == '팀장':
                     add_approver_if_not_exists(center_head)          # 센터장
                     if leadership != center_head:
                         add_approver_if_not_exists(leadership)      # 중앙기술연구소장
                     add_agreement_if_not_exists('해그리드')            # 전략실
                     add_agreement_if_not_exists(gwp_center_head)     # GWP 센터장
-                    add_approver_if_not_exists('아이언맨')            # 아이언맨
+                    # 조건부로 아이언맨 추가
+                    if amount >= 1000000:
+                        add_approver_if_not_exists('아이언맨')        # 아이언맨
 
         process_special_approval_line()
     else:
