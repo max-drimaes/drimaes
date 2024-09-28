@@ -373,8 +373,8 @@ def main():
         formatted_amount = format_number_with_commas(amount_input)
         st.write(f"입력된 금액: {formatted_amount} 원")
 
-        # **주의 문구 추가**: '구매(용역)요청서-계좌이체/법인카드' 선택 시
-        if selected_document == '구매(용역)요청서-계좌이체/법인카드':
+        # **주의 문구 추가**: '구매(용역)요청서-계좌이체/법인카드', '지출승인요청서(법인카드)' 선택 시
+        if selected_document == '구매(용역)요청서-계좌이체/법인카드', '지출승인요청서(법인카드)' :
             st.warning('국책카드라면 전략실(해그리드) 합의를 GWP센터 합의 전에 추가해주세요.')
     
     else:
