@@ -32,10 +32,10 @@ document_types = {
     "협회가입신청서": ['협회가입신청서']
 }
 
-# 금액 입력이 필요한 문서 목록
+# 금액 입력이 필요한 문서 목록 (거래처등록신청서 제거)
 documents_requiring_amount = [
     '입금품의',
-    #'거래처등록신청서',
+    # '거래처등록신청서',  # 제거됨
     '선급정산신청서',
     '지출승인요청서(법인카드)',
     '구매(용역)요청서-계좌이체/법인카드',
@@ -90,8 +90,8 @@ center_heads = {
     '전장 R&D 센터': '전장 R&D 센터장',
 }
 
-# 역할 목록 (팀원, 팀장만 남김)
-roles = ['팀원', '팀장']
+# 역할 목록 기본값 (팀원, 팀장)
+default_roles = ['팀원', '팀장']
 
 # HR&GA 팀 합의 필요한 문서
 hr_documents = [
@@ -357,13 +357,17 @@ def main():
     # 팀 선택
     selected_team = st.selectbox("팀 선택", teams)
 
-    # 역할 선택
-    selected_role = st.selectbox("역할 선택", roles)
+    # 역할 선택 (디자인 센터일 경우 팀장 제외)
+    if selected_center == 'Design 센터':
+        available_roles = ['팀원']
+    else:
+        available_roles = default_roles
+    selected_role = st.selectbox("역할 선택", available_roles)
 
     # 문서 선택
     selected_document = st.selectbox("문서 선택", get_all_documents())
 
-    # 금액 입력 필드 조건부 표시
+    # 금액 입력 필드 조건부 표시 (거래처등록신청서 제외)
     if selected_document in documents_requiring_amount:
         amount_input = st.number_input("금액 입력 (원)", min_value=0, value=0, step=1000)
         formatted_amount = format_number_with_commas(amount_input)
