@@ -6,7 +6,7 @@ document_types = {
     "B유형": ['휴가신청서', '국내출장 신청서'],
     "C유형": ['국내출장 결과보고 및 정산신청서', '휴일대체근무신청서', '경조사비용 신청서'],
     "D유형": ['시간외근로 사전신청서', '시간외근로 결과보고서', '근태취소신청서'],
-    "E유형": ['입금품의', '선급정산신청서'],
+    "E유형": ['입금품의', '거래처등록신청서', '선급정산신청서'],
     "F유형": ['품의서', '계약품의서', '해외출장 신청서'],
     "G유형": [
         '지출승인요청서(법인카드)',
@@ -35,6 +35,7 @@ document_types = {
 # 금액 입력이 필요한 문서 목록 (거래처등록신청서 제거)
 documents_requiring_amount = [
     '입금품의',
+    # '거래처등록신청서',  # 제거됨
     '선급정산신청서',
     '지출승인요청서(법인카드)',
     '구매(용역)요청서-계좌이체/법인카드',
@@ -112,6 +113,7 @@ finance_documents = [
     '경조사비용 신청서',
     '입금품의',
     '세금계산서 발행요청서',
+    '거래처등록신청서',
     '경비청구신청서(개인카드, 영수증)',
     '지출승인요청서(법인카드)',
     '지급품의(정기/수시/기타)_세금계산서',
@@ -341,7 +343,7 @@ def main():
 
     st.markdown("""
     ### 결재 라인에 대한 설명
-    - 결재 라인은 문서의 결재 과정을 나타내는 흐름도이며, 각 문서의 종류와 권한에 따라 결재자와 합의자가 결정됩니다.
+    - 결재 라인은 문서의 결재 과정을 나타내는 흐름도이며, 각 문서의 종류과 권한에 따라 결재자와 합의자가 결정됩니다.
     - 결재는 발신부서와 수신부서의 개념을 뜻하지만, 비즈박스 특성상 이를 구현할 수 없으므로 결재자와 합의자로 구분합니다.
     - 기본적인 흐름은 **발신부서 결재 완료** 후, **수신부서 합의 완료**의 흐름입니다.
     - 다만, 최상위 결재자인 **아이언맨**과 **백호**의 경우 **수신부서** (보통 GWP 센터)의 합의가 끝난 후 결재를 진행합니다.
@@ -375,15 +377,11 @@ def main():
 
     # 버튼 클릭 시 결재 라인 생성
     if st.button("결재 라인 생성"):
-        # 금액 입력이 필요한 문서에서 금액이 입력되지 않은 경우 경고 표시
-        if selected_document in documents_requiring_amount and amount_input == 0:
-            st.error("금액 입력이 필요한 문서입니다. 금액을 입력해 주세요.")
-        else:
-            approval_line_str = generate_approval_line(
-                selected_center, selected_team, selected_role, selected_document, amount_input
-            )
-            st.subheader("결재 라인:")
-            st.text(approval_line_str)
+        approval_line_str = generate_approval_line(
+            selected_center, selected_team, selected_role, selected_document, amount_input
+        )
+        st.subheader("결재 라인:")
+        st.text(approval_line_str)
 
 if __name__ == "__main__":
     main()
