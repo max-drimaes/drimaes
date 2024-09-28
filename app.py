@@ -343,7 +343,7 @@ def main():
 
     st.markdown("""
     ### 결재 라인에 대한 설명
-    - 결재 라인은 문서의 결재 과정을 나타내는 흐름도이며, 각 문서의 종류과 권한에 따라 결재자와 합의자가 결정됩니다.
+    - 결재 라인은 문서의 결재 과정을 나타내는 흐름도이며, 각 문서의 종류와 권한에 따라 결재자와 합의자가 결정됩니다.
     - 결재는 발신부서와 수신부서의 개념을 뜻하지만, 비즈박스 특성상 이를 구현할 수 없으므로 결재자와 합의자로 구분합니다.
     - 기본적인 흐름은 **발신부서 결재 완료** 후, **수신부서 합의 완료**의 흐름입니다.
     - 다만, 최상위 결재자인 **아이언맨**과 **백호**의 경우 **수신부서** (보통 GWP 센터)의 합의가 끝난 후 결재를 진행합니다.
@@ -361,7 +361,7 @@ def main():
     if selected_center == 'Design 센터':
         available_roles = ['팀원']
     else:
-        available_roles = default_roles
+        available_roles = ['팀원', '팀장']
     selected_role = st.selectbox("역할 선택", available_roles)
 
     # 문서 선택
@@ -377,11 +377,15 @@ def main():
 
     # 버튼 클릭 시 결재 라인 생성
     if st.button("결재 라인 생성"):
-        approval_line_str = generate_approval_line(
-            selected_center, selected_team, selected_role, selected_document, amount_input
-        )
-        st.subheader("결재 라인:")
-        st.text(approval_line_str)
+        # 금액 입력이 필요한 문서에서 금액이 입력되지 않은 경우 경고 표시
+        if selected_document in documents_requiring_amount and amount_input == 0:
+            st.error("금액 입력이 필요한 문서입니다. 금액을 입력해 주세요.")
+        else:
+            approval_line_str = generate_approval_line(
+                selected_center, selected_team, selected_role, selected_document, amount_input
+            )
+            st.subheader("결재 라인:")
+            st.text(approval_line_str)
 
 if __name__ == "__main__":
     main()
