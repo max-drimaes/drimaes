@@ -15,7 +15,7 @@ document_types = {
         '선급금신청서',
         '교육 신청서',
         '교육결과보고서',
-        '경비청구신청서(개인카드, 영수증)'  # 여기로 이동
+        '경비청구신청서(개인카드, 영수증)'
     ],
     "H유형": [
         '지출승인요청서(법인카드)',
@@ -25,7 +25,7 @@ document_types = {
         '교육 신청서',
         '교육결과보고서',
         '세금계산서 발행요청서',
-        '경비청구신청서(개인카드, 영수증)'  # H유형에도 추가
+        '경비청구신청서(개인카드, 영수증)'
     ],
     "공문서": ['공문서'],
     "회원가입완료보고서": ['회원가입완료보고서'],
@@ -49,14 +49,11 @@ documents_requiring_amount = [
 
 # 1000 단위로 쉼표 추가 함수
 def format_number_with_commas(number):
-    if number == "":
-        return ""
     try:
-        # 쉼표가 포함된 문자열을 숫자로 변환 후 다시 쉼표 포함 문자열로 변환
-        number = int(number.replace(",", ""))
+        number = int(number)
         return f"{number:,}"
-    except ValueError:
-        return number
+    except (ValueError, TypeError):
+        return ""
 
 # 문서 목록 중복 제거 함수
 def remove_duplicates(doc_list):
@@ -130,48 +127,6 @@ def is_same_person(role1, role2):
     same_person_roles = [('중앙기술연구소장', '선행 R&D 센터장')]
     return (role1, role2) in same_person_roles or (role2, role1) in same_person_roles
 
-# 메인 함수
-def main():
-    st.title("DRIMAES 결재 라인 생성기")
-
-    st.markdown("""
-    ### 결재 라인에 대한 설명
-    - 결재 라인은 문서의 결재 과정을 나타내는 흐름도이며, 각 문서의 종류과 권한에 따라 결재자와 합의자가 결정됩니다.
-    - 결재는 발신부서와 수신부서의 개념을 뜻하지만, 비즈박스 특성상 이를 구현할 수 없으므로 결재자와 합의자로 구분합니다.
-    - 기본적인 흐름은 **발신부서 결재 완료** 후, **수신부서 합의 완료**의 흐름입니다.
-    - 다만, 최상위 결재자인 **아이언맨**과 **백호**의 경우 **수신부서** (보통 GWP 센터)의 합의가 끝난 후 결재를 진행합니다.
-    - 결재 라인이 심플한 센터와 전략실은 제외하였습니다.
-    """)
-
-    # 센터 선택
-    selected_center = st.selectbox("센터 선택", sorted(list(team_dict.keys())))
-    teams = team_dict.get(selected_center, ['팀 없음'])
-
-    # 팀 선택
-    selected_team = st.selectbox("팀 선택", teams)
-
-    # 역할 선택
-    selected_role = st.selectbox("역할 선택", roles)
-
-    # 문서 선택
-    selected_document = st.selectbox("문서 선택", get_all_documents())
-
-    # 금액 입력 필드 조건부 표시
-    if selected_document in documents_requiring_amount:
-        amount_input = st.number_input("금액 입력 (원)", min_value=0, value=0, step=1000, format="%d")
-        formatted_amount = format_number_with_commas(str(amount_input))
-    else:
-        amount_input = 0
-        formatted_amount = ""
-
-    # 버튼 클릭 시 결재 라인 생성
-    if st.button("결재 라인 생성"):
-        approval_line_str = generate_approval_line(
-            selected_center, selected_team, selected_role, selected_document, amount_input
-        )
-        st.subheader("결재 라인:")
-        st.text(approval_line_str)
-
 # 결재 라인 생성 함수
 def generate_approval_line(selected_center, selected_team, selected_role, selected_document, amount):
     # 중앙기술연구소 소속 여부 확인
@@ -187,14 +142,14 @@ def generate_approval_line(selected_center, selected_team, selected_role, select
     # 결재자 및 합의자 지정 함수
     def add_approver_if_not_exists(approver):
         nonlocal order
-        if approver not in approver_set:
+        if approver and approver not in approver_set:
             approval_line.append((order, '결재', approver))
             approver_set.add(approver)
             order += 1
 
     def add_agreement_if_not_exists(agreer):
         nonlocal order
-        if agreer not in approver_set:
+        if agreer and agreer not in approver_set:
             approval_line.append((order, '합의', agreer))
             approver_set.add(agreer)
             order += 1
@@ -372,7 +327,7 @@ def generate_approval_line(selected_center, selected_team, selected_role, select
 
     process_approval_line()
 
-    # 결재라인 정렬 및 중복 제거
+    # 결재라인 정렬
     approval_line = sorted(approval_line, key=lambda x: x[0])
 
     # 결과 문자열 생성
@@ -381,6 +336,48 @@ def generate_approval_line(selected_center, selected_team, selected_role, select
         approval_line_str += f"{i}. {action}: {name}\n"
 
     return approval_line_str.strip()
+
+# 메인 함수
+def main():
+    st.title("DRIMAES 결재 라인 생성기")
+
+    st.markdown("""
+    ### 결재 라인에 대한 설명
+    - 결재 라인은 문서의 결재 과정을 나타내는 흐름도이며, 각 문서의 종류과 권한에 따라 결재자와 합의자가 결정됩니다.
+    - 결재는 발신부서와 수신부서의 개념을 뜻하지만, 비즈박스 특성상 이를 구현할 수 없으므로 결재자와 합의자로 구분합니다.
+    - 기본적인 흐름은 **발신부서 결재 완료** 후, **수신부서 합의 완료**의 흐름입니다.
+    - 다만, 최상위 결재자인 **아이언맨**과 **백호**의 경우 **수신부서** (보통 GWP 센터)의 합의가 끝난 후 결재를 진행합니다.
+    - 결재 라인이 심플한 센터와 전략실은 제외하였습니다.
+    """)
+
+    # 센터 선택
+    selected_center = st.selectbox("센터 선택", sorted(list(team_dict.keys())))
+    teams = team_dict.get(selected_center, ['팀 없음'])
+
+    # 팀 선택
+    selected_team = st.selectbox("팀 선택", teams)
+
+    # 역할 선택
+    selected_role = st.selectbox("역할 선택", roles)
+
+    # 문서 선택
+    selected_document = st.selectbox("문서 선택", get_all_documents())
+
+    # 금액 입력 필드 조건부 표시
+    if selected_document in documents_requiring_amount:
+        amount_input = st.number_input("금액 입력 (원)", min_value=0, value=0, step=1000)
+        formatted_amount = format_number_with_commas(amount_input)
+        st.write(f"입력된 금액: {formatted_amount} 원")
+    else:
+        amount_input = 0
+
+    # 버튼 클릭 시 결재 라인 생성
+    if st.button("결재 라인 생성"):
+        approval_line_str = generate_approval_line(
+            selected_center, selected_team, selected_role, selected_document, amount_input
+        )
+        st.subheader("결재 라인:")
+        st.text(approval_line_str)
 
 if __name__ == "__main__":
     main()
