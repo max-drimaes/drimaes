@@ -32,6 +32,21 @@ document_types = {
     "협회가입신청서": ['협회가입신청서']
 }
 
+# 금액 입력이 필요한 문서 목록
+documents_requiring_amount = [
+    '입금품의',
+    '거래처등록신청서',
+    '선급정산신청서',
+    '지출승인요청서(법인카드)',
+    '구매(용역)요청서-계좌이체/법인카드',
+    '지급품의(정기/수시/기타)_세금계산서',
+    '선급금신청서',
+    '교육 신청서',
+    '교육결과보고서',
+    '경비청구신청서(개인카드, 영수증)',
+    '외화송금신청서'
+]
+
 # 1000 단위로 쉼표 추가 함수
 def format_number_with_commas(number):
     if number == "":
@@ -121,13 +136,12 @@ def main():
 
     st.markdown("""
     ### 결재 라인에 대한 설명
-    - 결재 라인은 문서의 결재 과정을 나타내는 흐름도이며, 각 문서의 종류와 권한에 따라 결재자와 합의자가 결정됩니다.
+    - 결재 라인은 문서의 결재 과정을 나타내는 흐름도이며, 각 문서의 종류과 권한에 따라 결재자와 합의자가 결정됩니다.
     - 결재는 발신부서와 수신부서의 개념을 뜻하지만, 비즈박스 특성상 이를 구현할 수 없으므로 결재자와 합의자로 구분합니다.
     - 기본적인 흐름은 **발신부서 결재 완료** 후, **수신부서 합의 완료**의 흐름입니다.
     - 다만, 최상위 결재자인 **아이언맨**과 **백호**의 경우 **수신부서** (보통 GWP 센터)의 합의가 끝난 후 결재를 진행합니다.
     - 결재 라인이 심플한 센터와 전략실은 제외하였습니다.
     """)
-
 
     # 센터 선택
     selected_center = st.selectbox("센터 선택", sorted(list(team_dict.keys())))
@@ -142,18 +156,18 @@ def main():
     # 문서 선택
     selected_document = st.selectbox("문서 선택", get_all_documents())
 
-    # 금액 입력 (쉼표가 자동으로 추가되는 기능)
-    amount_input = st.text_input("*금액 입력이 필요한 문서의 경우 금액 입력 (원)", '0', key="amount_input")
-    formatted_amount = format_number_with_commas(amount_input)
-    amount_input = st.text_input("해당 칸 입력금지_1,000단위로 자동 변경", value=formatted_amount, key="formatted_amount")
-
-    # 금액을 숫자로 변환
-    amount = int(formatted_amount.replace(",", "")) if formatted_amount.replace(",", "").isdigit() else 0
+    # 금액 입력 필드 조건부 표시
+    if selected_document in documents_requiring_amount:
+        amount_input = st.number_input("금액 입력 (원)", min_value=0, value=0, step=1000, format="%d")
+        formatted_amount = format_number_with_commas(str(amount_input))
+    else:
+        amount_input = 0
+        formatted_amount = ""
 
     # 버튼 클릭 시 결재 라인 생성
     if st.button("결재 라인 생성"):
         approval_line_str = generate_approval_line(
-            selected_center, selected_team, selected_role, selected_document, amount
+            selected_center, selected_team, selected_role, selected_document, amount_input
         )
         st.subheader("결재 라인:")
         st.text(approval_line_str)
@@ -230,7 +244,7 @@ def generate_approval_line(selected_center, selected_team, selected_role, select
             document_type = "H유형"
         else:
             document_type = "G유형"
-    elif selected_document in ['지출승인요청서(법인카드)', '경비청구신청서(개인카드, 영수증)']:  # 여기 수정
+    elif selected_document in ['지출승인요청서(법인카드)', '경비청구신청서(개인카드, 영수증)']:
         if amount >= 500000:
             document_type = "H유형"
         else:
@@ -286,16 +300,6 @@ def generate_approval_line(selected_center, selected_team, selected_role, select
         else:
             # 기존 로직 유지
             # 각 문서 유형에 따른 결재 라인 생성
-
-            # 센터장 뒤에 중앙기술연구소장 추가 (Design 센터, 전장 R&D 센터)
-            if selected_center in ['Design 센터', '전장 R&D 센터']:
-                # 먼저 추가할 결재자 결정
-                if document_type == 'F유형' or document_type == 'H유형' or document_type == '공문서':
-                    # 특정 유형에 대해서만 중앙기술연구소장 추가
-                    pass  # 이미 추가 로직에서 처리됨
-                else:
-                    # 일반적인 경우 센터장 뒤에 중앙기술연구소장 추가
-                    pass  # 기존 로직에서 처리됨
 
             if document_type == 'A유형':
                 add_approver_if_not_exists(next_approver)
@@ -366,12 +370,9 @@ def generate_approval_line(selected_center, selected_team, selected_role, select
             else:
                 add_approver_if_not_exists(next_approver)
 
-    # 결재라인 생성기 이름 변경
-    # st.title("생성이 완료되었습니다.")  # 이 부분은 제거
-
     process_approval_line()
 
-    # 결재 라인 정렬 및 중복 제거
+    # 결재라인 정렬 및 중복 제거
     approval_line = sorted(approval_line, key=lambda x: x[0])
 
     # 결과 문자열 생성
