@@ -381,17 +381,25 @@ def main():
         # **주의 문구 추가**: '구매(용역)요청서-계좌이체/법인카드', '지출승인요청서(법인카드)' 선택 시
         if selected_document in ['구매(용역)요청서-계좌이체/법인카드', '지출승인요청서(법인카드)'] :
             st.warning('국책카드라면 전략실(해그리드) 합의를 GWP센터 합의 전에 추가해주세요.')
+
+        # **추가된 부분**: 금액이 0원일 경우 경고 메시지 표시
+        if amount_input == 0:
+            st.error("금액을 입력해주세요")
     
     else:
         amount_input = 0
 
     # 버튼 클릭 시 결재 라인 생성
     if st.button("결재 라인 생성"):
-        approval_line_str = generate_approval_line(
-            selected_center, selected_team, selected_role, selected_document, amount_input
-        )
-        st.subheader("결재 라인:")
-        st.text(approval_line_str)
+        # 금액이 필요한 문서인데 금액이 0인 경우 생성하지 않음
+        if selected_document in documents_requiring_amount and amount_input == 0:
+            st.error("금액을 입력해주세요")
+        else:
+            approval_line_str = generate_approval_line(
+                selected_center, selected_team, selected_role, selected_document, amount_input
+            )
+            st.subheader("결재 라인:")
+            st.text(approval_line_str)
 
 if __name__ == "__main__":
     main()
