@@ -321,8 +321,11 @@ def generate_approval_line(selected_center, selected_team, selected_role, select
                     add_agreement_if_not_exists(agreement_team)
 
             elif document_type == '회원가입완료보고서':
-                add_approver_if_not_exists(next_approver)
-
+                if selected_role == '팀원':
+                    add_approver_if_not_exists(next_approver)
+                    add_approver_if_not_exists(center_head)
+                elif selected_role == '팀장':
+                    add_approver_if_not_exists(center_head)
             else:
                 add_approver_if_not_exists(next_approver)
 
