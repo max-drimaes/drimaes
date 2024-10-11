@@ -184,7 +184,7 @@ def generate_approval_line(selected_center, selected_team, selected_role, select
     def get_agreement_team():
         if selected_document in hr_documents:
             return 'HR&GA 팀원'
-        elif selected_document in finance_documents:
+        elif selected_document in finance_documents or selected_document == '(해외) 출장 정산서':  # 여기에서 (해외) 출장 정산서를 추가
             return 'Finance 팀원'
         else:
             return None
