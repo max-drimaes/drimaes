@@ -7,8 +7,7 @@ document_types = {
     "C유형": ['(국내) 출장 정산서', '휴일대체근무신청서', '경조사비용 신청서'],
     "D유형": ['시간외근로 사전신청서', '시간외근로 결과보고서', '근태취소신청서'],
     "E유형": ['입금품의', '거래처등록신청서', '선급정산신청서'],
-    "F유형": ['품의서', '계약품의서', '프로젝트 등록 신청서'],
-    # '(해외) 출장 정산서'를 F유형에서 제거함
+    "F유형": ['품의서', '계약품의서', '(해외) 출장 신청서', '프로젝트 등록 신청서'],  # '(해외) 출장 정산서' 제거
     "G유형": [
         '지출승인요청서(법인카드)',
         '구매(용역)요청서-계좌이체/법인카드',
@@ -36,7 +35,8 @@ document_types = {
 
 # 금액 입력이 필요한 문서 목록 (거래처등록신청서 제거)
 documents_requiring_amount = [
-    # 금액 입력이 필요 없는 문서에서 '(해외) 출장 정산서' 제거됨
+    # '입금품의',
+    # '거래처등록신청서',  # 제거됨
     '선급정산신청서',
     '지출승인요청서(법인카드)',
     '구매(용역)요청서-계좌이체/법인카드',
@@ -222,80 +222,114 @@ def generate_approval_line(selected_center, selected_team, selected_role, select
         agreement_team = get_agreement_team()
         gwp_center_head = 'GWP 센터장'
 
-        # 기존 로직 유지
-        # 각 문서 유형에 따른 결재 라인 생성
-
-        if document_type == 'A유형':
-            add_approver_if_not_exists(next_approver)
-
-        elif document_type == 'B유형':
-            add_approver_if_not_exists(next_approver)
-            if agreement_team:
-                add_agreement_if_not_exists(agreement_team)
-            add_agreement_if_not_exists(gwp_center_head)
-
-        elif document_type == 'C유형':
-            if selected_role == '팀원':
-                add_approver_if_not_exists(next_approver)
-                add_approver_if_not_exists(center_head)
-            elif selected_role == '팀장':
-                add_approver_if_not_exists(center_head)
-            if agreement_team:
-                add_agreement_if_not_exists(agreement_team)
-            add_agreement_if_not_exists(gwp_center_head)
-
-        elif document_type == 'D유형':
-            if selected_role == '팀원':
-                add_approver_if_not_exists(next_approver)
-            elif selected_role == '팀장':
-                add_approver_if_not_exists(center_head)
-            if agreement_team:
-                add_agreement_if_not_exists(agreement_team)
-            add_agreement_if_not_exists(gwp_center_head)
-
-        elif document_type == 'E유형':
-            if selected_role == '팀원':
-                add_approver_if_not_exists(next_approver)
-                add_approver_if_not_exists(center_head)
-            elif selected_role == '팀장':
-                add_approver_if_not_exists(center_head)
-            if agreement_team:
-                add_agreement_if_not_exists(agreement_team)
-
-        elif document_type in ['F유형', 'H유형', '공문서']:
-            if selected_role == '팀원':
-                add_approver_if_not_exists(next_approver)
-                add_approver_if_not_exists(center_head)
-            elif selected_role == '팀장':
-                add_approver_if_not_exists(center_head)
-            if selected_center in ['Design 센터', '전장 R&D 센터']:
-                add_approver_if_not_exists('중앙기술연구소장')  # 센터장 뒤에 중앙기술연구소장 추가
-            if agreement_team:
-                add_agreement_if_not_exists(agreement_team)
-            add_agreement_if_not_exists(gwp_center_head)
-            if is_cri_member:
-                add_approver_if_not_exists('중앙기술연구소장')  # 전략실장 대신 중앙기술연구소장
-            add_approver_if_not_exists('아이언맨')
-
-        elif document_type == 'G유형':
-            if selected_role == '팀원':
-                add_approver_if_not_exists(next_approver)
-                add_approver_if_not_exists(center_head)
-            elif selected_role == '팀장':
-                add_approver_if_not_exists(center_head)
-            if selected_center in ['Design 센터', '전장 R&D 센터']:
-                add_approver_if_not_exists('중앙기술연구소장')  # 센터장 뒤에 중앙기술연구소장 추가
-            if agreement_team:
-                add_agreement_if_not_exists(agreement_team)
-
-        elif document_type == '회원가입완료보고서':
-            if selected_role == '팀원':
-                add_approver_if_not_exists(next_approver)
-                add_approver_if_not_exists(center_head)
-            elif selected_role == '팀장':
-                add_approver_if_not_exists(center_head)
+        # '협회가입신청서'에 대한 특수 로직 적용
+        if selected_document == '협회가입신청서':
+            # 제공된 조건에 따라 결재 라인 생성
+            if not is_cri_member:
+                # 중앙기술연구소 외부
+                if selected_role == '팀원':
+                    add_approver_if_not_exists(next_approver)  # 팀장
+                    add_approver_if_not_exists(center_head)  # 해당 센터장
+                    add_agreement_if_not_exists('해그리드')     # 전략실(해그리드)
+                    add_agreement_if_not_exists(gwp_center_head)
+                    add_approver_if_not_exists('중앙기술연구소장')  # 중앙기술연구소장으로 변경
+                    add_approver_if_not_exists('아이언맨')
+                elif selected_role == '팀장':
+                    add_approver_if_not_exists(center_head)
+                    add_agreement_if_not_exists('해그리드')
+                    add_agreement_if_not_exists(gwp_center_head)
+                    add_approver_if_not_exists('중앙기술연구소장')  # 중앙기술연구소장으로 변경
+                    add_approver_if_not_exists('아이언맨')
+            else:
+                # 중앙기술연구소 소속
+                if selected_role == '팀원':
+                    add_approver_if_not_exists(next_approver)  # 팀장
+                    add_approver_if_not_exists(center_head)
+                    add_approver_if_not_exists('중앙기술연구소장')  # 중앙기술연구소장 추가
+                    add_agreement_if_not_exists('해그리드')
+                    add_agreement_if_not_exists(gwp_center_head)
+                    add_approver_if_not_exists('아이언맨')
+                elif selected_role == '팀장':
+                    add_approver_if_not_exists(center_head)
+                    add_approver_if_not_exists('중앙기술연구소장')  # 중앙기술연구소장 추가
+                    add_agreement_if_not_exists('해그리드')
+                    add_agreement_if_not_exists(gwp_center_head)
+                    add_approver_if_not_exists('아이언맨')
         else:
-            add_approver_if_not_exists(next_approver)
+            # 기존 로직 유지
+            # 각 문서 유형에 따른 결재 라인 생성
+
+            if document_type == 'A유형':
+                add_approver_if_not_exists(next_approver)
+
+            elif document_type == 'B유형':
+                add_approver_if_not_exists(next_approver)
+                if agreement_team:
+                    add_agreement_if_not_exists(agreement_team)
+                add_agreement_if_not_exists(gwp_center_head)
+
+            elif document_type == 'C유형':
+                if selected_role == '팀원':
+                    add_approver_if_not_exists(next_approver)
+                    add_approver_if_not_exists(center_head)
+                elif selected_role == '팀장':
+                    add_approver_if_not_exists(center_head)
+                if agreement_team:
+                    add_agreement_if_not_exists(agreement_team)
+                add_agreement_if_not_exists(gwp_center_head)
+
+            elif document_type == 'D유형':
+                if selected_role == '팀원':
+                    add_approver_if_not_exists(next_approver)
+                elif selected_role == '팀장':
+                    add_approver_if_not_exists(center_head)
+                if agreement_team:
+                    add_agreement_if_not_exists(agreement_team)
+                add_agreement_if_not_exists(gwp_center_head)
+
+            elif document_type == 'E유형':
+                if selected_role == '팀원':
+                    add_approver_if_not_exists(next_approver)
+                    add_approver_if_not_exists(center_head)
+                elif selected_role == '팀장':
+                    add_approver_if_not_exists(center_head)
+                if agreement_team:
+                    add_agreement_if_not_exists(agreement_team)
+
+            elif document_type in ['F유형', 'H유형', '공문서']:
+                if selected_role == '팀원':
+                    add_approver_if_not_exists(next_approver)
+                    add_approver_if_not_exists(center_head)
+                elif selected_role == '팀장':
+                    add_approver_if_not_exists(center_head)
+                if selected_center in ['Design 센터', '전장 R&D 센터']:
+                    add_approver_if_not_exists('중앙기술연구소장')  # 센터장 뒤에 중앙기술연구소장 추가
+                if agreement_team:
+                    add_agreement_if_not_exists(agreement_team)
+                add_agreement_if_not_exists(gwp_center_head)
+                if is_cri_member:
+                    add_approver_if_not_exists('중앙기술연구소장')  # 전략실장 대신 중앙기술연구소장
+                add_approver_if_not_exists('아이언맨')
+
+            elif document_type == 'G유형':
+                if selected_role == '팀원':
+                    add_approver_if_not_exists(next_approver)
+                    add_approver_if_not_exists(center_head)
+                elif selected_role == '팀장':
+                    add_approver_if_not_exists(center_head)
+                if selected_center in ['Design 센터', '전장 R&D 센터']:
+                    add_approver_if_not_exists('중앙기술연구소장')  # 센터장 뒤에 중앙기술연구소장 추가
+                if agreement_team:
+                    add_agreement_if_not_exists(agreement_team)
+
+            elif document_type == '회원가입완료보고서':
+                if selected_role == '팀원':
+                    add_approver_if_not_exists(next_approver)
+                    add_approver_if_not_exists(center_head)
+                elif selected_role == '팀장':
+                    add_approver_if_not_exists(center_head)
+            else:
+                add_approver_if_not_exists(next_approver)
 
     process_approval_line()
 
@@ -347,7 +381,7 @@ def main():
         st.write(f"입력된 금액: {formatted_amount} 원")
 
         # **주의 문구 추가**: '구매(용역)요청서-계좌이체/법인카드', '지출승인요청서(법인카드)' 선택 시
-        if selected_document in ['구매(용역)요청서-계좌이체/법인카드', '지출승인요청서(법인카드)'] :
+        if selected_document in ['구매(용역)요청서-계좌이체/법인카드', '지출승인요청서(법인카드)']:
             st.warning('국책카드라면 전략실(해그리드) 합의를 GWP센터 합의 전에 추가해주세요.')
 
         # **추가된 부분**: 금액이 0원일 경우 경고 메시지 표시
