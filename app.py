@@ -15,7 +15,8 @@ document_types = {
         '선급금신청서',
         '교육 신청서',
         '교육결과보고서',
-        '경비청구신청서(개인카드, 영수증)'
+        '경비청구신청서(개인카드, 영수증)',
+        '외화송금신청서'
     ],
     "H유형": [
         '지출승인요청서(법인카드)',
@@ -26,6 +27,7 @@ document_types = {
         '교육결과보고서',
         '세금계산서 발행요청서',
         '경비청구신청서(개인카드, 영수증)',
+        '외화송금신청서',
         '(해외) 출장 정산서'  # H유형으로 이동
     ],
     "공문서": ['공문서'],
@@ -207,7 +209,7 @@ def generate_approval_line(selected_center, selected_team, selected_role, select
             document_type = "H유형"
         else:
             document_type = "G유형"
-    elif selected_document in ['구매(용역)요청서-계좌이체/법인카드', '선급금신청서', '지급품의(정기/수시/기타)_세금계산서']:
+    elif selected_document in ['구매(용역)요청서-계좌이체/법인카드', '선급금신청서', '지급품의(정기/수시/기타)_세금계산서','외화송금신청서']:
         if amount >= 3000000:
             document_type = "H유형"
         else:
